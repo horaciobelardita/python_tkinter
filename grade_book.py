@@ -5,6 +5,33 @@ import tkMessageBox, tkFileDialog
 # file format
 # student name, grade, grade
 
+class DisplayFrame(ttk.Frame):
+
+    def __init__(self, parent, controller):
+        ttk.Frame.__init__(self, parent)
+        ttk.Label(self, text='REGISTROS').pack()
+        self.text = tk.Text(self)
+        self.text.pack()
+        ttk.Button(self, text='Volver a Inicio',
+        command=lambda: controller.show_frame(MenuFrame)).pack()
+        self.controller = controller
+
+    def process(self):
+        filename = tkFileDialog.askopenfilename()
+        if filename:
+            with open(filename, 'r') as f:
+                line = f.readline()
+                self.text.insert('0.0', 'Registros de archivo({})\n'.format(filename.split('/')[-1]))
+                nr = 0
+                line = f.readline()
+                while line != '':
+                    nr += 1
+                    self.text.insert(tk.END, "{}- {}".format(nr, line))
+                    line = f.readline()
+        else:
+            # el usuario no selecciono un archivo
+            self.controller.show_frame(MenuFrame)
+
 class AddNamesFrame(ttk.Frame):
 
     def __init__(self, parent, controller):
@@ -81,12 +108,16 @@ class MenuFrame(tk.Frame):
         pass
 
     def show(self):
-        pass
+        self.controller.show_frame(DisplayFrame)
+        self.controller.frames[DisplayFrame].process()
+
+    def __toogle_state(self, state):
+        for b in (self.add_button, self.show_button, self.delete_grade_btn, self.delete_student_btn):
+            b.config(state=state)
 
     def create(self):
         self.controller.show_frame(AddNamesFrame)
-        for b in (self.add_button, self.show_button, self.delete_grade_btn, self.delete_student_btn):
-            b.config(state='active')
+        self.__toogle_state('active')
 
     def delete_grade(self):
         pass
@@ -107,7 +138,7 @@ class App(tk.Tk):
         container.grid_columnconfigure(0, weight=1)
 
         self.frames = {}
-        for f in (MenuFrame, AddNamesFrame):
+        for f in (MenuFrame, AddNamesFrame, DisplayFrame):
             frame = f(container, self)
             self.frames[f] = frame
             frame.grid(column=0, row=0, sticky='nsew')
